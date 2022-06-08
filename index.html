@@ -1,44 +1,154 @@
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <title>JS Lab</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, serif;
+<!DOCTYPE html>
+<html lang="pl"> 
+    <head>
+        <title>Refleksomierz</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <h3>Najwyższy wynik:</h3>
+        <h3 id="highscore">pierwsze podejście</h3>
+
+        <div id="board" onclick="clicked()">
+
+        </div>
+        <div class="buttons">
+            <button type="button" onclick="begin()">Start</button>
+            <button type="button" onclick="stop()">Stop</button>
+            <input type="number" placeholder="Ilość prób (opcjonalnie - domyslnie 5)" id="count"/>
+        </div>
+
+        <div id="statistics">
+           <p>Najkrótszy czas reakcji: <span id="shortest"></span></p>
+           <p>Najszybszy czas reakcji: <span id="longest"></span></p>
+           <p>Średni czas reakcji: <span id="average"></span></p>
+           <p class="bads">Kliknięcia przed zmianą koloru: <span id="bads">0</span></p>
+        </div>
+
+    <script>
+        if(localStorage.getItem("highscore") != null) {
+            document.getElementById("highscore").innerHTML = localStorage.getItem("highscore");
         }
 
-        h1 {
-            color: #0B3954;
+        var board = document.getElementById("board");
+        var input = document.getElementById("count");
+        var shortest = document.getElementById("shortest");
+        var longest = document.getElementById("longest");
+        var bads = document.getElementById("bads");
+        var average = document.getElementById("average");
+        
+        var averageTimes = [];
+        var count = 0;
+        var max_count = 5;
+        var timeout = null;
+        var isPlaying = false;
+        var start = new Date();
+
+        function begin() {
+            if (!isPlaying) {
+                restartStatistics();
+
+                if (input.value != "") {
+                    max_count = Number(input.value);
+                }
+
+                isPlaying = true;
+                board.style.backgroundColor = "green";
+
+                let random = Math.floor(Math.random() * (6000 - 1000)) + 1000;
+                timeout = setTimeout(changeColor, random); 
+            }
         }
-    </style>
-</head>
-<body>
-<div id="app">
-    <h1 id="main-header">Moja aplikacja</h1>
-    <p>To będzie gra. A oto co muszę zrobić:</p>
-    <ol>
-        <li class="boring">Nauczyć się HTML</li>
-        <li class="boring">Nauczyć się CSS</li>
-        <li>Nauczyć się JS</li>
-        <li id="super-important">Zaimplementować</li>
-    </ol>
-	
-<input type="text" id="myTextField">
-<input type="checkbox" id="myCheckbox">
-<button type="button" onclick="readValues()">Odczytaj wartości</button>
 
-</div>
-<script>
+        function stop() {
+            if (isPlaying) {
+                clearTimeout(timeout);
+                isPlaying = false;
+                board.style.backgroundColor = "white";
 
-function readValues(){
-	const isChecked = document.getElementById('myCheckbox').checked;
-	if(isChecked) {
-		const text = document.getElementById("myTextField").value;
-		alert(text);
-	}
-}
-</script>
-</body>
+                if (localStorage.getItem("highscore") == null) {
+                    localStorage.setItem("highscore", shortest.innerHTML);
+                    document.getElementById("highscore").innerHTML = localStorage.getItem("highscore");
+                }
+                else {
+                    let highscore = localStorage.getItem("highscore");
+                    if (Number(highscore) > Number(shortest.innerHTML)) {
+                        localStorage.setItem("highscore", Number(shortest.innerHTML));
+                        document.getElementById("highscore").innerHTML = localStorage.getItem("highscore");
+                    }
+                }
+            }
+        }
+
+        function changeColor() {
+            start = new Date();
+            board.style.backgroundColor = "red";
+        }
+
+        function clicked() {
+            if (board.style.backgroundColor == "red" && isPlaying) {
+                board.style.backgroundColor = "green";
+
+                var time = (new Date().getTime() - start.getTime()) / 1000;
+
+                averageTimes.push(time);
+                count++;
+
+                showStatistics();
+
+                if (shortest.innerHTML == "") {
+                    shortest.innerHTML = time;
+                    longest.innerHTML = time;
+                    average.innerHTML = time;
+                }
+                else {
+                    if (time < Number(shortest.innerHTML)) {
+                        shortest.innerHTML = time;
+                    }
+                    else if (time > Number(shortest.innerHTML)) {
+                        longest.innerHTML = time;
+                    }
+                    let sum = 0;
+                    for (let x = 0; x < averageTimes.length; x++) {
+                        sum += averageTimes[x];
+                    }
+                    average.innerHTML = (sum / count).toFixed(3);
+                }
+
+                let random = Math.floor(Math.random() * (6000 - 1000)) + 1000;
+                timeout = setTimeout(changeColor, random); 
+                
+                if(count >= max_count) {
+                    stop();
+                }
+            }
+            else {
+                showStatistics();
+
+                if (bads.innerHTML == '0') {
+                    bads.innerHTML = 1;
+                }
+                else {
+                    bads.innerHTML = Number(bads.innerHTML) + 1;
+                }
+            }
+        }
+
+        function hideStatistics() {
+            document.getElementById("statistics").style.display = "none";
+        }
+
+        function showStatistics() {
+            document.getElementById("statistics").style.display = "block";
+        }
+
+        function restartStatistics() {
+            shortest.innerHTML = "";
+            longest.innerHTML = "";
+            average.innerHTML = "";
+            bads.innerHTML = "";
+
+            hideStatistics();
+        }
+    </script>
+    </body>
 </html>
